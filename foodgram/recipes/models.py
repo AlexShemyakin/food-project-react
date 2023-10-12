@@ -72,18 +72,26 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(
         'Tag',
-        verbose_name='Тег',
+        related_name='recipes'
     )
-    # image = models.ImageField(
-    #     'Картинка',
-    #     upload_to='recipes/',
-    # )
+    image = models.ImageField(
+        'Картинка',
+        upload_to='recipes/images/',
+    )
     ingredients = models.ManyToManyField(
         'Ingredient',
         through='RecipeIngredient',
         through_fields=('recipe', 'ingredient'),
         verbose_name='ингредиенты',
-    ) 
+    )
+    is_favorited = models.BooleanField(
+        default=False,
+        verbose_name='В избранном'
+    )
+    is_in_shopping_cart = models.BooleanField(
+        default=False,
+        verbose_name='В списке покупок',
+    )
 
     class Meta:
         ordering = ('-pub_date', 'name')
@@ -124,9 +132,10 @@ class ShoppingCart(models.Model):
     user = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
+        related_name='shoppingcart',
         verbose_name='Пользователь'
     )
-    recipe = models.ForeignKey(
+    favorite_recipe = models.ForeignKey(
         'Recipe',
         on_delete=models.CASCADE,
         verbose_name='Рецепт'
@@ -137,7 +146,7 @@ class ShoppingCart(models.Model):
         verbose_name_plural = 'Список покупок'
 
     def __Str__(self):
-        return (f'{self.user} - {self.recipe}')
+        return (f'{self.user} - {self.favorite_recipe}')
 
 
 class Favorite(models.Model):
@@ -155,7 +164,7 @@ class Favorite(models.Model):
     )
 
     class Meta:
-        # ordering = ()
+        ordering = ('user',)
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
 
@@ -168,13 +177,15 @@ class Follow(models.Model):
         'User',
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='follower'
+        related_name='follower',
+        # null=True
     )
     author = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='following'
+        related_name='following',
+        # null=True
     )
     sub_date = models.DateTimeField(
         'Дата подписки',
@@ -186,9 +197,6 @@ class Follow(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 
-    def __str__(self):
-        return (f'Пользователь: {self.user.username},'
-                f' автор: {self.author.username}')
 
 
 class User(AbstractUser):

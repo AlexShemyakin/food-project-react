@@ -11,30 +11,22 @@ class RecipeIngredientInline(admin.TabularInline):
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    pass
-    # list_display = (
-    #     'pk',
-    #     'title',
-    #     'measure',
-    # )
-    # search_fields = ('title',)
-    # empty_value_display = '-пусто-'
+    list_display = (
+        'id',
+        'name',
+        'measurement_unit',
+    )
 
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     inlines = (RecipeIngredientInline, )
     list_display = (
-        'pk',
+        'id',
         'name',
-        # 'author',
-        # 'pub_date',
-        # 'time',
-        # 'image',
+        'author',
+        # 'get_favorites_count',
     )
-    # search_fields = ('title', )
-    # list_filter = ('author', 'title', 'tags')
-    # empty_value_display = '-пусто-'
 
 
 
@@ -53,30 +45,8 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'user',
-        'recipe',
-    )
-
-
-@admin.register(Favorite)
-class FavoriteAdmin(admin.ModelAdmin):
-    # author = Recipe.author.username
-
-    list_display = (
-        'id',
-        'user',
         'favorite_recipe',
-        # 'author'
     )
-
-@admin.register(Follow)
-class FollowAdmin(admin.ModelAdmin):
-    list_display = (
-        'id',
-        'author',
-        'user',
-        'sub_date'
-    )
-
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -86,12 +56,28 @@ class UserAdmin(admin.ModelAdmin):
         'email',
         'recipes_count'
     )
-    list_filter = (
-        'username',
-        'email',
-    )
 
     def recipes_count(self, obj):
         return obj.recipes.all().count()
 
-    recipes_count.short_description = 'Всего рецептов'
+
+
+
+@admin.register(Favorite)
+class FavoriteAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'id',
+        'user',
+        'favorite_recipe'
+    )
+
+
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'author',
+        'user',
+        'sub_date'
+    )
