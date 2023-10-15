@@ -1,15 +1,11 @@
 import base64
 from rest_framework import serializers
-from django.shortcuts import get_object_or_404
 from rest_framework.validators import ValidationError
-from rest_framework.pagination import LimitOffsetPagination
 from djoser.serializers import UserCreateSerializer, UserSerializer, PasswordSerializer
-from recipes.models import Tag, Recipe, RecipeIngredient, Ingredient
-from recipes.models import User, ShoppingCart, Favorite, Follow
 from django.core.files.base import ContentFile
 
-
-LIMIT = LimitOffsetPagination.get_limit
+from recipes.models import Tag, Recipe, RecipeIngredient, Ingredient
+from recipes.models import User, ShoppingCart, Favorite, Follow
 
 
 class Base64ImageField(serializers.ImageField):
@@ -197,7 +193,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
     is_favorited = FavoriteRecipeSerializer(read_only=True)
     is_in_shopping_cart = ShoppingCartSerizlizer(read_only=True)
-    image = image = Base64ImageField()
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe

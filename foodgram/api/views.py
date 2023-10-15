@@ -1,28 +1,25 @@
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
 from djoser.views import UserViewSet
-from django.db.models import Sum
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import PageNumberPagination
 # from .utils import download_csv
 
 from recipes.permissions import IsAuthor
-from recipes.models import Tag, Recipe, User, Ingredient, RecipeIngredient
+from recipes.models import Tag, Recipe, User, Ingredient
 from recipes.models import ShoppingCart, Favorite, Follow
 from .serializers import TagSerializer, RecipeSerializer, RecipeCreateUpdateSerializer, RecipeShortSerializer
-from .serializers import IngredientSerializer, CustomUserSerializer, ShoppingCartSerizlizer
+from .serializers import IngredientSerializer, ShoppingCartSerizlizer
 from .serializers import FavoriteRecipeSerializer, FollowSerializer, FollowingUserSerializer
-from utils.paginators import CustomPaginator
 
 
 class CustomUserViewSet(UserViewSet):
     """Создание, чтение пользователей и подписок."""
-    pagination_class = CustomPaginator
+    pagination_class = PageNumberPagination
 
     @action(
             methods=('post', 'delete',),
@@ -118,7 +115,7 @@ class TagViewSet(ModelViewSet):
 
 class RecipeViewSet(ModelViewSet):
     """Рецепты."""
-    pagination_class = CustomPaginator
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         return Recipe.objects.prefetch_related(
