@@ -10,11 +10,27 @@ from rest_framework.pagination import PageNumberPagination
 # from .utils import download_csv
 
 from recipes.permissions import IsAuthor
-from recipes.models import Tag, Recipe, User, Ingredient
-from recipes.models import ShoppingCart, Favorite, Follow
-from .serializers import TagSerializer, RecipeSerializer, RecipeCreateUpdateSerializer, RecipeShortSerializer
-from .serializers import IngredientSerializer, ShoppingCartSerizlizer
-from .serializers import FavoriteRecipeSerializer, FollowSerializer, FollowingUserSerializer
+from recipes.models import (
+    Tag,
+    Recipe,
+    User,
+    Ingredient,
+    ShoppingCart,
+    Favorite,
+    Follow
+)
+
+from .serializers import (
+    TagSerializer,
+    RecipeSerializer,
+    RecipeCreateUpdateSerializer,
+    RecipeShortSerializer,
+    IngredientSerializer,
+    ShoppingCartSerizlizer,
+    FavoriteRecipeSerializer,
+    FollowSerializer,
+    FollowingUserSerializer
+)
 
 
 class CustomUserViewSet(UserViewSet):
@@ -22,10 +38,10 @@ class CustomUserViewSet(UserViewSet):
     pagination_class = PageNumberPagination
 
     @action(
-            methods=('post', 'delete',),
-            detail=True,
-            permission_classes = (IsAuthenticated,)
-            )
+        methods=('post', 'delete',),
+        detail=True,
+        permission_classes=(IsAuthenticated,)
+    )
     def subscribe(self, request, id=None):
         author = get_object_or_404(User, id=id)
         if request.method == 'POST':
@@ -48,11 +64,10 @@ class CustomUserViewSet(UserViewSet):
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
     @action(
-            methods=('get',),
-            detail=False,
-            permission_classes=(IsAuthor,)
+        methods=('get',),
+        detail=False,
+        permission_classes=(IsAuthor,)
     )
     def subscriptions(self, request):
         queryset = User.objects.filter(
@@ -152,13 +167,13 @@ class RecipeViewSet(ModelViewSet):
         ).delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
     def create_action(self, request, pk, serializer):
         """Создание объекта модели favorite/shopping_cart."""
         favorite = serializer(
-                data={'id': pk},
-                context={'request': request}
-            )
+            data={'id': pk},
+            context={'request': request}
+        )
         favorite.is_valid(raise_exception=True)
         favorite.save()
         recipe = get_object_or_404(Recipe, id=pk)
@@ -219,7 +234,6 @@ class RecipeViewSet(ModelViewSet):
     #     return download_csv(ingredients)
 
 
-
 # class ShoppingCartViewSet(ModelViewSet):
 #     serializer_class = ShoppingCartSerizlizer
 
@@ -231,7 +245,7 @@ class RecipeViewSet(ModelViewSet):
 #         context = super().get_serializer_context()
 #         context['recipe_id'] = self.kwargs.get('recipe_id')
 #         return context
-    
+
 #     def perform_create(self, serializer):
 #         serializer.save(
 #             user=self.request.user,
@@ -253,7 +267,7 @@ class RecipeViewSet(ModelViewSet):
 #         context = super().get_serializer_context()
 #         context['recipe_id'] = self.kwargs.get('recipe_id')
 #         return context
-    
+
 #     def perform_create(self, serializer):
 #         serializer.save(
 #             user=self.request.user,
@@ -279,5 +293,3 @@ class RecipeViewSet(ModelViewSet):
 #             favorite_recipe_id=recipe_id
 #         ).delete()
 #         return Response(status=status.HTTP_204_NO_CONTENT)
-
-

@@ -20,6 +20,7 @@ class IngredientAdmin(admin.ModelAdmin):
         'name',
     )
 
+
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     inlines = (RecipeIngredientInline, )
@@ -53,6 +54,7 @@ class ShoppingCartAdmin(admin.ModelAdmin):
         'favorite_recipe',
     )
 
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
@@ -68,8 +70,6 @@ class UserAdmin(admin.ModelAdmin):
 
     def recipes_count(self, obj):
         return obj.recipes.all().count()
-
-
 
 
 @admin.register(Favorite)

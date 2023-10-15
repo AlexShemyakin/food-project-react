@@ -1,7 +1,11 @@
 import base64
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
-from djoser.serializers import UserCreateSerializer, UserSerializer, PasswordSerializer
+from djoser.serializers import (
+    UserCreateSerializer,
+    UserSerializer,
+    PasswordSerializer
+)
 from django.core.files.base import ContentFile
 
 from recipes.models import Tag, Recipe, RecipeIngredient, Ingredient
@@ -20,13 +24,12 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-
-
 class ShoppingCartSerizlizer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Recipe.objects.all(),
         write_only=True
     )
+
     class Meta:
         model = ShoppingCart
         fields = ('id',)
@@ -54,12 +57,10 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
         queryset=Recipe.objects.all(),
         write_only=True
     )
-    
 
     class Meta:
         model = Favorite
         fields = ('id',)
-
 
     def create(self, validated_data):
         obj, created = Favorite.objects.get_or_create(
@@ -73,13 +74,12 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
         return obj
 
 
-
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор для тэгов."""
     class Meta:
         model = Tag
         fields = (
-            'id', 
+            'id',
             'name',
             'slug',
             'color',
@@ -96,6 +96,7 @@ class IngredientSerializer(serializers.ModelSerializer):
             'measurement_unit'
         )
 
+
 class RecipeShortSerializer(serializers.ModelSerializer):
     """Сериализатор для модели favorite."""
     class Meta:
@@ -108,6 +109,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
+
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     """Серил. для переопределения ингридиентов для серил. рецептов."""
     id = serializers.ReadOnlyField(source='ingredient.id')
@@ -119,6 +121,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
+
 
 class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField(read_only=True)
@@ -177,11 +180,11 @@ class RecipeIndregientCreateSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-          model = RecipeIngredient
-          fields = ('id', 'amount')
+        model = RecipeIngredient
+        fields = ('id', 'amount')
 
 
-class RecipeCreateUpdateSerializer(serializers.ModelSerializer): 
+class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания, обновления рецепта."""
     ingredients = RecipeIndregientCreateSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
@@ -222,7 +225,6 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             )
         return super().update(instance, validated_data)
 
-
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         instance = super().create(validated_data)
@@ -256,9 +258,6 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         )
 
 
-
-
-
 class SetPasswordSerializer(PasswordSerializer):
     current_password = serializers.CharField(
         required=True,
@@ -270,8 +269,6 @@ class SetPasswordSerializer(PasswordSerializer):
             raise serializers.ValidationError({
                 "new_password": "Пароли не должны совпадать"})
         return data
-
-
 
 
 class FollowingUserSerializer(serializers.ModelSerializer):
@@ -308,7 +305,6 @@ class FollowingUserSerializer(serializers.ModelSerializer):
             'is_subscribed'
         )
 
-
     def get_is_subscribed(self, obj):
         if self.context.get('request').user.is_authenticated:
             return (
@@ -326,7 +322,7 @@ class FollowingUserSerializer(serializers.ModelSerializer):
             many=True,
             context=self.context
         ).data[:limit]
-    
+
     def get_recipes_count(self, obj):
         return obj.recipes.count()
 
@@ -336,6 +332,7 @@ class FollowingUserSerializer(serializers.ModelSerializer):
             user=user,
             author=obj
         )
+
 
 class FollowRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для доп. полей модели подписок."""

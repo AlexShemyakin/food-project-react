@@ -1,13 +1,11 @@
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
-
-# User = get_user_model()
 
 
 class Tag(models.Model):
     name = models.CharField(
-        'Название',        max_length=200,
+        'Название',
+        max_length=200,
         unique=True
     )
     slug = models.SlugField(
@@ -171,7 +169,7 @@ class Favorite(models.Model):
 
     def __str__(self) -> str:
         return f'{self.favorite_recipe} - {self.user}'
-    
+
 
 class Follow(models.Model):
     user = models.ForeignKey(
@@ -202,7 +200,6 @@ class Follow(models.Model):
         return (f'{self.user} follow to {self.author}')
 
 
-
 class User(AbstractUser):
     username = models.CharField(
         'Логин',
@@ -229,6 +226,7 @@ class User(AbstractUser):
         'first_name',
         'last_name',
     )
+
     class Meta:
         ordering = ('-username',)
         verbose_name = 'Пользователь'
