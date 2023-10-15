@@ -1,10 +1,13 @@
 from rest_framework import routers
-from django.contrib import admin
+# from django.contrib import admin
 from django.urls import path, include
 
-from api.views import CustomUserViewSet, TagViewSet, RecipeViewSet
-from api.views import IngredientViewSet
-from api.views import CustomUserViewSet
+from api.views import (
+    CustomUserViewSet,
+    TagViewSet,
+    RecipeViewSet,
+    IngredientViewSet
+)
 
 router = routers.DefaultRouter()
 # router.register(

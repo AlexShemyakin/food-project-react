@@ -326,11 +326,12 @@ class FollowingUserSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         recipes = obj.recipes
+        limit = self.context.get('request').query_params.get('limit')
         return FollowRecipeSerializer(
             recipes,
             many=True,
             context=self.context
-        ).data[:LIMIT]
+        ).data[:limit]
     
     def get_recipes_count(self, obj):
         return obj.recipes.count()

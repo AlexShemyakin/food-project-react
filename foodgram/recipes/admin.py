@@ -16,7 +16,9 @@ class IngredientAdmin(admin.ModelAdmin):
         'name',
         'measurement_unit',
     )
-
+    list_filter = (
+        'name',
+    )
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
@@ -25,9 +27,12 @@ class RecipeAdmin(admin.ModelAdmin):
         'id',
         'name',
         'author',
-        # 'get_favorites_count',
     )
-
+    list_filter = (
+        'author',
+        'name',
+        'tags'
+    )
 
 
 @admin.register(Tag)
@@ -55,6 +60,10 @@ class UserAdmin(admin.ModelAdmin):
         'username',
         'email',
         'recipes_count'
+    )
+    list_filter = (
+        'email',
+        'username'
     )
 
     def recipes_count(self, obj):

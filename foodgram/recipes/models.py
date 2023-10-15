@@ -7,8 +7,8 @@ from django.contrib.auth.models import AbstractUser
 
 class Tag(models.Model):
     name = models.CharField(
-        'Название',
-        max_length=200,
+        'Название',        max_length=200,
+        unique=True
     )
     slug = models.SlugField(
         'Название тега в url-строке',
@@ -33,6 +33,7 @@ class Ingredient(models.Model):
     name = models.CharField(
         max_length=200,
         verbose_name='Название ингредиента',
+        unique=True
     )
     measurement_unit = models.CharField(
         max_length=200,
@@ -124,7 +125,7 @@ class RecipeIngredient(models.Model):
         verbose_name_plural = 'Ингридиенты'
 
     def __str__(self) -> str:
-        return f'{self.ingredient.name} - {self.amount}'
+        return f'{self.ingredient} - {self.amount}'
 
 
 class ShoppingCart(models.Model):
@@ -145,7 +146,7 @@ class ShoppingCart(models.Model):
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
 
-    def __Str__(self):
+    def __Str__(self) -> str:
         return (f'{self.user} - {self.favorite_recipe}')
 
 
@@ -197,6 +198,9 @@ class Follow(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 
+    def __str__(self) -> str:
+        return (f'{self.user} follow to {self.author}')
+
 
 
 class User(AbstractUser):
@@ -208,12 +212,10 @@ class User(AbstractUser):
     first_name = models.CharField(
         'Имя',
         max_length=100,
-        unique=True
     )
     last_name = models.CharField(
         'Фамилия',
         max_length=100,
-        unique=True
     )
     email = models.EmailField(
         'Электронная почта',

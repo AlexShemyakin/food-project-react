@@ -17,11 +17,12 @@ from recipes.models import ShoppingCart, Favorite, Follow
 from .serializers import TagSerializer, RecipeSerializer, RecipeCreateUpdateSerializer, RecipeShortSerializer
 from .serializers import IngredientSerializer, CustomUserSerializer, ShoppingCartSerizlizer
 from .serializers import FavoriteRecipeSerializer, FollowSerializer, FollowingUserSerializer
+from utils.paginators import CustomPaginator
 
 
 class CustomUserViewSet(UserViewSet):
     """Создание, чтение пользователей и подписок."""
-    pagination_class = LimitOffsetPagination
+    pagination_class = CustomPaginator
 
     @action(
             methods=('post', 'delete',),
@@ -54,7 +55,7 @@ class CustomUserViewSet(UserViewSet):
     @action(
             methods=('get',),
             detail=False,
-            permission_classes=(IsAuthenticated,)
+            permission_classes=(IsAuthor,)
     )
     def subscriptions(self, request):
         queryset = User.objects.filter(
@@ -112,11 +113,12 @@ class TagViewSet(ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
+    lookup_field = 'slug'
 
 
 class RecipeViewSet(ModelViewSet):
     """Рецепты."""
-    pagination_class = LimitOffsetPagination
+    pagination_class = CustomPaginator
 
     def get_queryset(self):
         return Recipe.objects.prefetch_related(
@@ -132,10 +134,10 @@ class RecipeViewSet(ModelViewSet):
             self.permission_classes = (AllowAny,)
         return super().get_permissions()
 
-    # def get_serializer_class(self):
-    #     if self.request.method == 'POST' or self.request.method == 'PATCH':
-    #         return RecipeCreateUpdateSerializer
-    #     return RecipeSerializer
+    def get_serializer_class(self):
+        if self.request.method == 'POST' or self.request.method == 'PATCH':
+            return RecipeCreateUpdateSerializer
+        return RecipeSerializer
 
     def delete_action(self, request, pk, model):
         """Удаление объекта модели favorite/shopping_cart."""
