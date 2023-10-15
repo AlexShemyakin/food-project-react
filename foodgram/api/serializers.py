@@ -169,8 +169,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
 
-
-
 class RecipeIndregientCreateSerializer(serializers.ModelSerializer):
     """Серил. для создания ингридиентов для серил. создания рецептов."""
     id = serializers.PrimaryKeyRelatedField(
@@ -206,7 +204,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             'is_favorited',
             'is_in_shopping_cart',
             'image'
-            )
+        )
 
     def update(self, instance, validated_data):
 
