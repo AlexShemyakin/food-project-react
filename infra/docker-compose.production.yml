@@ -30,5 +30,5 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - static:/staticfiles/
-      - media:/mediafiles/
+      - static:/var/html/static
+      - media:/var/html/media
