@@ -17,14 +17,14 @@ services:
     env_file:
       - ../.env
     volumes:
-      - static:/app/collected_static
+      - static:/backend_static
       - media:/app/media
     depends_on:
       - db
   frontend:
     image: alexshemyakin/foodgram_frontend:latest
     volumes:
-      - ../frontend/:/app/result_build/
+      - static:/app/result_build/
   gateway:
     image: alexshemyakin/foodgram_gateway:latest
     ports:

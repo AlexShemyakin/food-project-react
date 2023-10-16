@@ -26,7 +26,7 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
     volumes:
-      - ../frontend/:/app/result_build/
+      - static:/app/result_build/
   gateway:
     build: ../nginx/
     ports:
