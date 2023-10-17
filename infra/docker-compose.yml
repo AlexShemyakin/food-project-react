@@ -25,17 +25,20 @@ services:
     depends_on:
       - db
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    build: ../frontend/
+      # context: 
+      # dockerfile: Dockerfile
     volumes:
       - frontend_value:/app/build/
   gateway:
     build: ../nginx/
     ports:
-      - "8000:80"
+      - "80:80"
     volumes:
       - static:/var/html/static
       - media:/var/html/media
       - frontend_value:/usr/share/nginx/html/
       - redoc:/usr/share/nginx/html/api/docs/
+    depends_on:
+      - frontend
+      - backend

@@ -1,34 +1,37 @@
 version: '3.3'
 
-volumes:
-  pg_data:
-  static:
-  media:
+# volumes:
+#   pg_data:
+#   static:
+#   media:
 
-services:
-  db:
-    image: postgres:13
-    env_file:
-      - ../.env
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-  backend:
-    image: alexshemyakin/foodgram_backend:latest
-    env_file:
-      - ../.env
-    volumes:
-      - static:/backend_static
-      - media:/app/media
-    depends_on:
-      - db
-  frontend:
-    image: alexshemyakin/foodgram_frontend:latest
-    volumes:
-      - static:/app/result_build/
-  gateway:
-    image: alexshemyakin/foodgram_gateway:latest
-    ports:
-      - "8080:80"
-    volumes:
-      - static:/var/html/static
-      - media:/var/html/media
+# services:
+#   db:
+#     image: postgres:13
+#     env_file:
+#       - ../.env
+#     volumes:
+#       - pg_data:/var/lib/postgresql/data
+#   backend:
+#     image: alexshemyakin/foodgram_backend:latest
+#     env_file:
+#       - ../.env
+#     volumes:
+#       - static:/app/collected_static
+#       - media:/app/media
+#       - redoc:/app/docs
+#     depends_on:
+#       - db
+#   frontend:
+#     image: alexshemyakin/foodgram_frontend:latest
+#     volumes:
+#       - frontend_value:/app/build/
+#   gateway:
+#     image: alexshemyakin/foodgram_gateway:latest
+#     ports:
+#       - "8080:80"
+#     volumes:
+#       - static:/var/html/static
+#       - media:/var/html/media
+#       - frontend_value:/usr/share/nginx/html
+#       - redoc:/usr/share/nginx/html/api/docs/
