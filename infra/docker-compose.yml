@@ -29,7 +29,7 @@ services:
       # context: 
       # dockerfile: Dockerfile
     volumes:
-      - frontend_value:/app/build/
+      - frontend_value:/app/build
   gateway:
     build: ../nginx/
     ports:
