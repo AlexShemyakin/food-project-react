@@ -4,6 +4,8 @@ volumes:
   pg_data:
   static:
   media:
+  redoc:
+  frontend_value:
 
 services:
   db:
@@ -25,7 +27,7 @@ services:
   frontend:
     image: alexshemyakin/foodgram_frontend:latest
     volumes:
-      - frontend_value:/app/build/
+      - frontend_value:/app/build
   gateway:
     image: alexshemyakin/foodgram_gateway:latest
     ports:
@@ -33,5 +35,8 @@ services:
     volumes:
       - static:/var/html/static
       - media:/var/html/media
-      - frontend_value:/usr/share/nginx/html
+      - frontend_value:/usr/share/nginx/html/
       - redoc:/usr/share/nginx/html/api/docs/
+    depends_on:
+      - frontend
+      - backend
