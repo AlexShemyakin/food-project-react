@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from .utils import download_csv
-from foodgram.utils.paginators import CustomPaginator
+from utils.paginators import CustomPaginator
 from recipes.filters import RecipeFilter
 from recipes.permissions import IsAuthor
 from recipes.models import (
