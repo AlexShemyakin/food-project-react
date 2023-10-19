@@ -1,14 +1,18 @@
 from django.shortcuts import get_object_or_404
+from django.db.models import Sum
 from djoser.views import UserViewSet
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
-# from .utils import download_csv
 
+from .utils import download_csv
+from foodgram.utils.paginators import CustomPaginator
+from recipes.filters import RecipeFilter
 from recipes.permissions import IsAuthor
 from recipes.models import (
     Tag,
@@ -17,9 +21,9 @@ from recipes.models import (
     Ingredient,
     ShoppingCart,
     Favorite,
-    Follow
+    Follow,
+    RecipeIngredient,
 )
-
 from .serializers import (
     TagSerializer,
     RecipeSerializer,
@@ -29,13 +33,13 @@ from .serializers import (
     ShoppingCartSerizlizer,
     FavoriteRecipeSerializer,
     FollowSerializer,
-    FollowingUserSerializer
+    FollowingUserSerializer,
 )
 
 
 class CustomUserViewSet(UserViewSet):
-    """Создание, чтение пользователей и подписок."""
-    pagination_class = PageNumberPagination
+    """Создание/чтение/удаление пользователей/подписок."""
+    pagination_class = CustomPaginator
 
     @action(
         methods=('post', 'delete',),
@@ -58,6 +62,13 @@ class CustomUserViewSet(UserViewSet):
                 ).data,
                 status=status.HTTP_201_CREATED
             )
+        if not Follow.objects.filter(
+            user=request.user,
+            author=author
+        ).exists():
+            raise ValidationError({
+                'error': 'Пользователь отсутствует в избранном'
+            })
         Follow.objects.filter(
             user=request.user,
             author=author
@@ -86,38 +97,17 @@ class CustomUserViewSet(UserViewSet):
                 queryset,
                 many=True,
                 context={'request': request}
-            ).data
+            )
         )
 
 
 class IngredientViewSet(ModelViewSet):
+    """Ингридиенты."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
-
-
-# class FollowViewSet(ModelViewSet):
-#     """"""
-#     serializer_class = FollowingUserSerializer
-#     # queryset = User.objects.all()
-
-#     def get_queryset(self):
-#         user = self.request.user.id
-#         return User.objects.filter(user=user)
-
-#     def get_serializer_context(self):
-#         context = super().get_serializer_context()
-#         context['author_id'] = self.kwargs.get('author_id')
-#         return context
-
-#     def perform_create(self, serializer):
-#         serializer.save(
-#             user=self.request.user,
-#             author=get_object_or_404(
-#                 User,
-#                 id=self.kwargs.get('author_id')
-#             )
-#         )
+    filter_backends = (SearchFilter,)
+    search_fields = ('^name',)
 
 
 class TagViewSet(ModelViewSet):
@@ -126,22 +116,26 @@ class TagViewSet(ModelViewSet):
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
     lookup_field = 'slug'
+    
 
 
 class RecipeViewSet(ModelViewSet):
-    """Рецепты."""
-    pagination_class = PageNumberPagination
+    """
+    Рецепты.
+    Создание/удаление моделей рецептов,
+    избранного, списка покупок.
+    """
+    queryset = Recipe.objects.prefetch_related(
+        'tags', 'ingredients'
+    ).select_related('author')
+    pagination_class = CustomPaginator
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
-    def get_queryset(self):
-        return Recipe.objects.prefetch_related(
-            'ingredients', 'tags'
-        ).select_related('author')
 
     def get_permissions(self):
         if self.request.method == 'DELETE' or self.request.method == 'PATCH':
             self.permission_classes = (IsAuthor,)
-        elif self.request.method == 'POST':
-            self.permission_classes = (IsAuthenticated,)
         else:
             self.permission_classes = (AllowAny,)
         return super().get_permissions()
@@ -151,31 +145,27 @@ class RecipeViewSet(ModelViewSet):
             return RecipeCreateUpdateSerializer
         return RecipeSerializer
 
-    def delete_action(self, request, pk, model):
+    def delete_action(self, request, pk, serializer, model):
         """Удаление объекта модели favorite/shopping_cart."""
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if not model.objects.filter(
-            user=request.user,
-            favorite_recipe=recipe
-        ).exists():
-            raise ValidationError({
-                'error': 'Рецепта нет в избранном'
-            })
-        model.objects.filter(
-            user=request.user,
-            favorite_recipe=recipe
-        ).delete()
+        obj = serializer(
+            data={'id': pk},
+            context={'request': request}
+        )
+        obj.is_valid(raise_exception=True)
+        self.perform_destroy(
+            model.objects.filter(recipe=pk, user=request.user)
+        )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def create_action(self, request, pk, serializer):
         """Создание объекта модели favorite/shopping_cart."""
-        favorite = serializer(
+        obj = serializer(
             data={'id': pk},
             context={'request': request}
         )
-        favorite.is_valid(raise_exception=True)
-        favorite.save()
+        obj.is_valid(raise_exception=True)
+        obj.save()
         recipe = get_object_or_404(Recipe, id=pk)
         return Response(
             RecipeShortSerializer(recipe).data,
@@ -188,20 +178,27 @@ class RecipeViewSet(ModelViewSet):
         detail=True,
     )
     def favorite(self, request, pk=None):
+        """Создание/удаление модели избранного."""
         if request.method == 'POST':
             return self.create_action(
                 request,
                 pk,
                 FavoriteRecipeSerializer
             )
-        return self.delete_action(request, pk, Favorite)
+        return self.delete_action(
+            request,
+            pk,
+            FavoriteRecipeSerializer,
+            Favorite
+        )
 
     @action(
         methods=('post', 'delete'),
-        permission_classes=(IsAuthenticated,),
+        permission_classes=(IsAuthor,),
         detail=True,
     )
     def shopping_cart(self, request, pk=None):
+        """Создать/удалить модель списка покупок."""
         if request.method == 'POST':
             return self.create_action(
                 request,
@@ -211,85 +208,26 @@ class RecipeViewSet(ModelViewSet):
         return self.delete_action(
             request,
             pk,
+            FavoriteRecipeSerializer,
             ShoppingCart
         )
 
-    # @action(
-    #     methods=('get',),
-    #     permission_classes=(IsAuthenticated,),
-    #     detail=False
-    # )
-    # def download_shopping_cart(self, request):
-    #     ingredients = RecipeIngredient.objects.filter(
-    #         recipe__in_cart__user=request.user
-    #     ).select_related(
-    #         'author'
-    #     ).prefetch_related(
-    #         'tags', 'ingredients'
-    #     ).values(
-    #         'ingredient__name', 'ingredient__measurement_unit'
-    #     ).annotate(
-    #         amount=Sum('ingredient_quantity')
-    #     )
-    #     return download_csv(ingredients)
-
-
-# class ShoppingCartViewSet(ModelViewSet):
-#     serializer_class = ShoppingCartSerizlizer
-
-#     def get_queryset(self):
-#         user = self.request.user.id
-#         return ShoppingCart.objects.filter(user=user)
-
-#     def get_serializer_context(self):
-#         context = super().get_serializer_context()
-#         context['recipe_id'] = self.kwargs.get('recipe_id')
-#         return context
-
-#     def perform_create(self, serializer):
-#         serializer.save(
-#             user=self.request.user,
-#             recipe=get_object_or_404(
-#                 Recipe,
-#                 id=self.kwargs['recipe_id']
-#             )
-#         )
-
-
-# class FavoriteRecipeViewSet(ModelViewSet):
-#     serializer_class = FavoriteRecipeSerializer
-
-#     def get_queryset(self):
-#         user = self.request.user.id
-#         return Favorite.objects.filter(user=user)
-
-#     def get_serializer_context(self):
-#         context = super().get_serializer_context()
-#         context['recipe_id'] = self.kwargs.get('recipe_id')
-#         return context
-
-#     def perform_create(self, serializer):
-#         serializer.save(
-#             user=self.request.user,
-#             favorite_recipe=get_object_or_404(
-#                 Recipe,
-#                 id=self.kwargs['recipe_id']
-#             )
-#         )
-
-#     @action(methods=('delete',), detail=True)
-#     def delete(self, request, recipe_id):
-#         user = request.user
-#         if not user.favorite.select_related(
-#             'favorite_recipe').filter(
-#                 favorite_recipe_id=recipe_id).exists():
-#             return Response(
-#                 {'errors': f'Рецепт отсутствует в Избранном.'},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#         get_object_or_404(
-#             Favorite,
-#             user=request.user,
-#             favorite_recipe_id=recipe_id
-#         ).delete()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
+    @action(
+        methods=('get',),
+        permission_classes=(IsAuthenticated,),
+        detail=False
+    )
+    def download_shopping_cart(self, request):
+        """Создание/скачивание файла списка покупок."""
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__shoppingcart__user=request.user
+        ).select_related(
+            'author'
+        ).prefetch_related(
+            'tags', 'ingredients'
+        ).values(
+            'ingredient__name', 'ingredient__measurement_unit'
+        ).annotate(
+            amount=Sum('amount')
+        )
+        return download_csv(ingredients)

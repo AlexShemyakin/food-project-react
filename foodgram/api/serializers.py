@@ -6,6 +6,7 @@ from djoser.serializers import (
     UserSerializer,
     PasswordSerializer
 )
+from django.db import IntegrityError
 from django.core.files.base import ContentFile
 
 from recipes.models import Tag, Recipe, RecipeIngredient, Ingredient
@@ -13,14 +14,12 @@ from recipes.models import User, ShoppingCart, Favorite, Follow
 
 
 class Base64ImageField(serializers.ImageField):
-    """Обработка картинок."""
-
+    """Обработка изображения."""
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
             ext = format.split('/')[-1]
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
         return super().to_internal_value(data)
 
 
@@ -34,12 +33,6 @@ class ShoppingCartSerizlizer(serializers.ModelSerializer):
         model = ShoppingCart
         fields = ('id',)
 
-    # def create(self, validated_data):
-    #     # msg = 'Рецепт уже добавлен в список покупок.'
-    #     return super().create(
-    #         validated_data,
-    #         # msg
-    #     )
     def create(self, validated_data):
         obj, created = ShoppingCart.objects.get_or_create(
             favorite_recipe=validated_data.get('id'),
@@ -210,32 +203,56 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance, validated_data):
-
+        tags = validated_data.pop('tags')
         instance.name = validated_data.get('name')
         instance.text = validated_data.get('text')
         instance.cooking_time = validated_data.get('cooking_time')
         instance.image = validated_data.get('image')
         ingredients = validated_data.pop('ingredients')
 
-        for ingredient in ingredients:
-            RecipeIngredient.objects.update(
-                recipe=instance,
-                ingredient=ingredient['ingredient'],
-                amount=ingredient['amount']
-            )
-        return super().update(instance, validated_data)
+        instance.ingredients.clear()
+        recipe_ingredients = RecipeIngredient.objects.bulk_create(
+            [
+                RecipeIngredient.objects(
+                    recipe=instance,
+                    ingredient=ingredient['ingredient'],
+                    amount=ingredient['amount']
+                ) for ingredient in ingredients
+            ]
+        )
+        instance.ingredient.set(recipe_ingredients)
+        instance.tags.set(tags)
+        instance.save()
+        return instance
 
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
-        instance = super().create(validated_data)
-
-        for ingredients_data in ingredients:
-            RecipeIngredient.objects.create(
-                recipe=instance,
-                ingredient=ingredients_data['ingredient'],
-                amount=ingredients_data['amount']
+        tags = validated_data.pop('tags')
+        recipe, created = Recipe.objects.create(
+            **validated_data,
+            author=self._get_user()
+        )
+        if not created:
+            raise ValidationError({
+                'error': 'Такой рецепт уже создан'
+            })
+        try:
+            recipe_ingredients = RecipeIngredient.objects.bulk_create(
+                [
+                    RecipeIngredient.objects(
+                        recipe=recipe,
+                        ingredient=ingredient['ingredient'],
+                        amount=ingredient['amount']
+                    ) for ingredient in ingredients
+                ]
             )
-        return instance
+        except IntegrityError:
+            raise ValidationError({
+                'error': 'Ингредиент уже добавлен'
+            })
+        recipe.ingredient.set(recipe_ingredients)
+        recipe.tags.set(tags)
+        return recipe
 
     def to_representation(self, instance):
         return RecipeSerializer(

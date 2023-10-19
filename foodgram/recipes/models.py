@@ -3,6 +3,7 @@ from django.db import models
 
 
 class Tag(models.Model):
+    """Tag."""
     name = models.CharField(
         'Название',
         max_length=200,
@@ -28,6 +29,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
+    """Ingredient."""
     name = models.CharField(
         max_length=200,
         verbose_name='Название ингредиента',
@@ -48,6 +50,7 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+    """Recipe."""
     name = models.CharField(
         max_length=100,
         verbose_name='Название рецепта',
@@ -102,6 +105,7 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
+    """Recipe-Ingredient."""
     ingredient = models.ForeignKey(
         'Ingredient',
         on_delete=models.CASCADE,
@@ -127,7 +131,7 @@ class RecipeIngredient(models.Model):
 
 
 class ShoppingCart(models.Model):
-    """Список покупок."""
+    """List of shopping."""
     user = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
@@ -137,7 +141,8 @@ class ShoppingCart(models.Model):
     favorite_recipe = models.ForeignKey(
         'Recipe',
         on_delete=models.CASCADE,
-        verbose_name='Рецепт'
+        verbose_name='Рецепт',
+        related_name='shoppingcart'
     )
 
     class Meta:
@@ -145,10 +150,11 @@ class ShoppingCart(models.Model):
         verbose_name_plural = 'Список покупок'
 
     def __Str__(self) -> str:
-        return (f'{self.user} - {self.favorite_recipe}')
+        return f'{self.user} - {self.favorite_recipe}'
 
 
 class Favorite(models.Model):
+    """Favorite."""
     user = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
@@ -168,23 +174,22 @@ class Favorite(models.Model):
         verbose_name_plural = 'Избранные рецепты'
 
     def __str__(self) -> str:
-        return f'{self.favorite_recipe} - {self.user}'
+        return f'{self.user} - {self.favorite_recipe}'
 
 
 class Follow(models.Model):
+    """Followe."""
     user = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
         related_name='follower',
-        # null=True
     )
     author = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
         verbose_name='Автор',
         related_name='following',
-        # null=True
     )
     sub_date = models.DateTimeField(
         'Дата подписки',
@@ -201,6 +206,7 @@ class Follow(models.Model):
 
 
 class User(AbstractUser):
+    """User."""
     username = models.CharField(
         'Логин',
         max_length=100,
