@@ -10,7 +10,6 @@ def download_csv(data):
     """
     response = HttpResponse(content_type='text/csv')
     response.write(u'\ufeff'.encode('utf8'))
-    
 
     field_name = data[0].keys()
     writer = csv.DictWriter(response, field_name)

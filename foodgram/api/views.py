@@ -2,8 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 from djoser.views import UserViewSet
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.exceptions import ValidationError
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.filters import SearchFilter
@@ -38,7 +37,10 @@ from .serializers import (
 
 
 class CustomUserViewSet(UserViewSet):
-    """Создание/чтение/удаление пользователей/подписок."""
+    """
+    Представление модели User.
+    CRD(create, read, delete) моделей User, Follow.
+    """
     pagination_class = CustomPaginator
 
     @action(
@@ -46,7 +48,7 @@ class CustomUserViewSet(UserViewSet):
         detail=True,
         permission_classes=(IsAuthenticated,)
     )
-    def subscribe(self, request, id=None):
+    def subscribe(self, request, id):
         author = get_object_or_404(User, id=id)
         if request.method == 'POST':
             follow = FollowSerializer(
@@ -62,13 +64,6 @@ class CustomUserViewSet(UserViewSet):
                 ).data,
                 status=status.HTTP_201_CREATED
             )
-        if not Follow.objects.filter(
-            user=request.user,
-            author=author
-        ).exists():
-            raise ValidationError({
-                'error': 'Пользователь отсутствует в избранном'
-            })
         Follow.objects.filter(
             user=request.user,
             author=author
@@ -101,8 +96,8 @@ class CustomUserViewSet(UserViewSet):
         )
 
 
-class IngredientViewSet(ModelViewSet):
-    """Ингридиенты."""
+class IngredientViewSet(ReadOnlyModelViewSet):
+    """Представление ингридиентов."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
@@ -110,20 +105,18 @@ class IngredientViewSet(ModelViewSet):
     search_fields = ('^name',)
 
 
-class TagViewSet(ModelViewSet):
-    """Тэги."""
+class TagViewSet(ReadOnlyModelViewSet):
+    """Представление тегов."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
     lookup_field = 'slug'
-    
 
 
 class RecipeViewSet(ModelViewSet):
     """
-    Рецепты.
-    Создание/удаление моделей рецептов,
-    избранного, списка покупок.
+    CRUD моделей Favorite, ShoppingCart,
+    Recipe, RecipeIngredient.
     """
     queryset = Recipe.objects.prefetch_related(
         'tags', 'ingredients'
@@ -132,18 +125,22 @@ class RecipeViewSet(ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
+    def get_queryset(self):
+        if self.action == 'favorite':
+            return self.filter_queryset(self.get_queryset())
+        return super().get_queryset()
 
     def get_permissions(self):
-        if self.request.method == 'DELETE' or self.request.method == 'PATCH':
-            self.permission_classes = (IsAuthor,)
-        else:
+        if self.request.method == 'GET':
             self.permission_classes = (AllowAny,)
+        else:
+            self.permission_classes = (IsAuthor,)
         return super().get_permissions()
 
     def get_serializer_class(self):
-        if self.request.method == 'POST' or self.request.method == 'PATCH':
-            return RecipeCreateUpdateSerializer
-        return RecipeSerializer
+        if self.request.method == 'GET':
+            return RecipeSerializer
+        return RecipeCreateUpdateSerializer
 
     def delete_action(self, request, pk, serializer, model):
         """Удаление объекта модели favorite/shopping_cart."""
@@ -153,7 +150,7 @@ class RecipeViewSet(ModelViewSet):
         )
         obj.is_valid(raise_exception=True)
         self.perform_destroy(
-            model.objects.filter(recipe=pk, user=request.user)
+            model.objects.filter(favorite_recipe=pk, user=request.user)
         )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -166,10 +163,10 @@ class RecipeViewSet(ModelViewSet):
         )
         obj.is_valid(raise_exception=True)
         obj.save()
-        recipe = get_object_or_404(Recipe, id=pk)
+        recipe_obj = get_object_or_404(Recipe, pk=pk)
         return Response(
-            RecipeShortSerializer(recipe).data,
-            status=status.HTTP_200_OK
+            RecipeShortSerializer(recipe_obj).data,
+            status=status.HTTP_201_CREATED
         )
 
     @action(
@@ -208,7 +205,7 @@ class RecipeViewSet(ModelViewSet):
         return self.delete_action(
             request,
             pk,
-            FavoriteRecipeSerializer,
+            ShoppingCartSerizlizer,
             ShoppingCart
         )
 

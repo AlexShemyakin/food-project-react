@@ -125,9 +125,12 @@ class RecipeIngredient(models.Model):
         ordering = ('ingredient', 'amount')
         verbose_name = 'Ингридиент'
         verbose_name_plural = 'Ингридиенты'
-
-    def __str__(self) -> str:
-        return f'{self.ingredient} - {self.amount}'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('ingredient', 'recipe'),
+                name='recipe_ingredient_unique_constraint'
+            ),
+        )
 
 
 class ShoppingCart(models.Model):
@@ -148,6 +151,12 @@ class ShoppingCart(models.Model):
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'favorite_recipe'),
+                name='unique_shopping_cart_constraint'
+            ),
+        )
 
     def __Str__(self) -> str:
         return f'{self.user} - {self.favorite_recipe}'
@@ -172,13 +181,19 @@ class Favorite(models.Model):
         ordering = ('user',)
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'favorite_recipe'),
+                name='unique_user_favorite_recipe_constraint'
+            ),
+        )
 
     def __str__(self) -> str:
         return f'{self.user} - {self.favorite_recipe}'
 
 
 class Follow(models.Model):
-    """Followe."""
+    """Follow."""
     user = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
@@ -200,6 +215,12 @@ class Follow(models.Model):
         ordering = ('-id',)
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'author'),
+                name='unique_follow_constraint'
+            ),
+        )
 
     def __str__(self) -> str:
         return (f'{self.user} follow to {self.author}')
@@ -224,6 +245,10 @@ class User(AbstractUser):
         'Электронная почта',
         max_length=100,
         unique=True
+    )
+    password = models.CharField(
+        max_length=150,
+        verbose_name='password'
     )
 
     USERNAME_FIELD = 'email'
