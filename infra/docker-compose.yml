@@ -26,8 +26,6 @@ services:
       - db
   frontend:
     build: ../frontend/
-      # context: 
-      # dockerfile: Dockerfile
     volumes:
       - frontend_value:/app/build
   gateway:
