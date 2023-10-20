@@ -6,7 +6,6 @@ from djoser.serializers import (
     UserSerializer
 )
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
 
 from recipes.models import Tag, Recipe, RecipeIngredient, Ingredient
 from recipes.models import User, ShoppingCart, Favorite, Follow
@@ -20,6 +19,7 @@ class Base64ImageField(serializers.ImageField):
             ext = format.split('/')[-1]
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
         return super().to_internal_value(data)
+
 
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
@@ -240,7 +240,7 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
         ingredients = validated_data.pop('ingredients')
 
         instance.ingredients.clear()
-        
+
         recipe_ingredients = RecipeIngredient.objects.bulk_create(
             [
                 RecipeIngredient(
@@ -269,8 +269,7 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
                     recipe=recipe,
                     ingredient=ingredient.get('id'),
                     amount=ingredient.get('amount')
-                ) 
-             for ingredient in ingredients],
+                ) for ingredient in ingredients],
         )
         recipe.ingredients.set(recipe_ingredients)
         recipe.tags.set(tags)
