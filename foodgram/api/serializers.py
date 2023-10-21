@@ -262,17 +262,23 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
             **validated_data,
             author=self.context.get('request').user
         )
-
-        recipe_ingredients = RecipeIngredient.objects.bulk_create(
-            [
-                RecipeIngredient(
-                    recipe=recipe,
-                    ingredient=ingredient.get('id'),
-                    amount=ingredient.get('amount')
-                ) for ingredient in ingredients],
-        )
-        recipe.ingredients.set(recipe_ingredients)
         recipe.tags.set(tags)
+        for ingredient in ingredients:
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient=ingredient.get('id'),
+                amount=ingredient.get('amount'),
+            )
+        # recipe_ingredients = RecipeIngredient.objects.bulk_create(
+        #     [
+        #         RecipeIngredient(
+        #             recipe=recipe,
+        #             ingredient=ingredient.get('id'),
+        #             amount=ingredient.get('amount')
+        #         ) for ingredient in ingredients],
+        # )
+        # recipe.ingredients.set(recipe_ingredients)
+        
         return recipe
 
     def to_representation(self, instance):

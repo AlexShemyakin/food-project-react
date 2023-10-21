@@ -6,8 +6,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', default='b53jkb89770rnrgjvb5865hgbvjf')
 
 DEBUG = os.getenv('DEBUG', default='True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='12.345.678.90,host-name').split(',')
-# ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+# ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='12.345.678.90,host-name').split(',')
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '84.201.161.67', 'gram-foodgram.hopto.org']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -67,8 +67,8 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', 'name'),
         'USER': os.getenv('POSTGRES_USER', 'user'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'db'),
-        'PORT': os.getenv('DB_PORT', 5432),
+        'HOST': os.getenv('PG_HOST', '127.0.0.1'),
+        'PORT': os.getenv('PG_PORT', 5432),
     }
 }
 
