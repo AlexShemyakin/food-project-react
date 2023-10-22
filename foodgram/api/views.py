@@ -3,7 +3,7 @@ from django.db.models import Sum
 from djoser.views import UserViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
@@ -151,8 +151,7 @@ class RecipeViewSet(ModelViewSet):
         return Response(
             serializer,
             status=status.HTTP_201_CREATED
-        ) 
-
+        )
 
     @action(
         methods=('post', 'delete'),
