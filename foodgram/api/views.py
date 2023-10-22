@@ -9,10 +9,10 @@ from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
-from .utils import download_csv
-from utils.paginators import CustomPaginator
-from recipes.filters import RecipeFilter
-from recipes.permissions import IsAuthor
+from .utils.paginators import CustomPaginator
+from .utils.responses import download_csv
+from .filters import RecipeFilter
+from recipes.permissions import IsAuthorOrReadOnly
 from recipes.models import (
     Tag,
     Recipe,
@@ -27,7 +27,6 @@ from .serializers import (
     TagSerializer,
     RecipeSerializer,
     RecipeCreateUpdateSerializer,
-    RecipeShortSerializer,
     IngredientSerializer,
     ShoppingCartSerizlizer,
     FavoriteRecipeSerializer,
@@ -64,7 +63,8 @@ class CustomUserViewSet(UserViewSet):
                 ).data,
                 status=status.HTTP_201_CREATED
             )
-        Follow.objects.filter(
+        get_object_or_404(
+            Follow,
             user=request.user,
             author=author
         ).delete()
@@ -79,28 +79,19 @@ class CustomUserViewSet(UserViewSet):
         queryset = User.objects.filter(
             following__user=request.user.id
         )
-        page = self.paginate_queryset(queryset)
-        if page:
-            serializer = FollowingUserSerializer(
-                page,
-                many=True,
-                context={'request': request}
-            )
-            return self.get_paginated_response(serializer.data)
-        return Response(
-            FollowingUserSerializer(
-                queryset,
-                many=True,
-                context={'request': request}
-            )
+        serializer = FollowingUserSerializer(
+            self.paginate_queryset(queryset),
+            many=True,
+            context={'request': request}
         )
+        return self.get_paginated_response(serializer.data)
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
     """Представление ингридиентов."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (SearchFilter,)
     search_fields = ('^name',)
 
@@ -109,7 +100,7 @@ class TagViewSet(ReadOnlyModelViewSet):
     """Представление тегов."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthorOrReadOnly,)
     lookup_field = 'slug'
 
 
@@ -124,18 +115,12 @@ class RecipeViewSet(ModelViewSet):
     pagination_class = CustomPaginator
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
+    permission_classes = IsAuthorOrReadOnly
 
     def get_queryset(self):
         if self.action == 'favorite':
             return self.filter_queryset(self.get_queryset())
         return super().get_queryset()
-
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            self.permission_classes = (AllowAny,)
-        else:
-            self.permission_classes = (IsAuthor,)
-        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -150,7 +135,7 @@ class RecipeViewSet(ModelViewSet):
         )
         obj.is_valid(raise_exception=True)
         self.perform_destroy(
-            model.objects.filter(favorite_recipe=pk, user=request.user)
+            model.objects.filter(recipe=pk, user=request.user)
         )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -163,11 +148,11 @@ class RecipeViewSet(ModelViewSet):
         )
         obj.is_valid(raise_exception=True)
         obj.save()
-        recipe_obj = get_object_or_404(Recipe, pk=pk)
         return Response(
-            RecipeShortSerializer(recipe_obj).data,
+            serializer,
             status=status.HTTP_201_CREATED
-        )
+        ) 
+
 
     @action(
         methods=('post', 'delete'),
@@ -191,7 +176,7 @@ class RecipeViewSet(ModelViewSet):
 
     @action(
         methods=('post', 'delete'),
-        permission_classes=(IsAuthor,),
+        permission_classes=(IsAuthenticated,),
         detail=True,
     )
     def shopping_cart(self, request, pk=None):

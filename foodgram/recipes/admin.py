@@ -1,4 +1,6 @@
+from typing import Any
 from django.contrib import admin
+from django import forms
 
 from .models import (
     Tag,
@@ -59,7 +61,7 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'user',
-        'favorite_recipe',
+        'recipe',
     )
 
 
@@ -86,12 +88,26 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'user',
-        'favorite_recipe'
+        'recipe'
     )
+
+class FollowForm(forms.ModelForm):
+
+    class Meta:
+        model = Follow
+        fields = '__all__'
+
+    def clean(self):
+        user = self.cleaned_data.get('user')
+        author = self.cleaned_data.get('author')
+        if user ==  author:
+            raise forms.ValidationError('Нельзя подписаться на самого себя.')
+        return self.cleaned_data
 
 
 @admin.register(Follow)
 class FollowAdmin(admin.ModelAdmin):
+    form = FollowForm
     list_display = (
         'id',
         'author',
