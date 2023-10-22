@@ -1,4 +1,3 @@
-from typing import Any
 from django.contrib import admin
 from django import forms
 
@@ -91,6 +90,7 @@ class FavoriteAdmin(admin.ModelAdmin):
         'recipe'
     )
 
+
 class FollowForm(forms.ModelForm):
 
     class Meta:
@@ -100,7 +100,7 @@ class FollowForm(forms.ModelForm):
     def clean(self):
         user = self.cleaned_data.get('user')
         author = self.cleaned_data.get('author')
-        if user ==  author:
+        if user == author:
             raise forms.ValidationError('Нельзя подписаться на самого себя.')
         return self.cleaned_data
 
