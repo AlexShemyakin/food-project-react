@@ -42,9 +42,9 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
                 user=self.context.get('request').user
             ).exists()
         return Favorite.objects.filter(
-                recipe=attrs.get('id'),
-                user=self.context.get('request').user
-            ).exists()
+            recipe=attrs.get('id'),
+            user=self.context.get('request').user
+        ).exists()
 
 
 class ShoppingCartSerizlizer(serializers.ModelSerializer):
@@ -61,9 +61,9 @@ class ShoppingCartSerizlizer(serializers.ModelSerializer):
                 user=self.context.get('request').user
             ).exists()
         return ShoppingCart.objects.filter(
-                recipe=attrs.get('id'),
-                user=self.context.get('request').user
-            ).exists()
+            recipe=attrs.get('id'),
+            user=self.context.get('request').user
+        ).exists()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -158,7 +158,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             and obj.shoppingcart.filter(user=user).exists()
         )
 
-
     class Meta:
         model = Recipe
         fields = (
@@ -224,15 +223,15 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
         return attrs
 
     def create_update_recipe(self, recipe, ingredients):
-        RecipeIngredient.objects.bulk_create( 
-            [ 
-                RecipeIngredient( 
-                    recipe=recipe, 
-                    ingredient=ingredient.get('id'), 
-                    amount=ingredient.get('amount') 
+        RecipeIngredient.objects.bulk_create(
+            [
+                RecipeIngredient(
+                    recipe=recipe,
+                    ingredient=ingredient.get('id'),
+                    amount=ingredient.get('amount')
                 ) for ingredient in ingredients
             ]
-        ) 
+        )
 
     def update(self, instance, validated_data):
         tags = validated_data.pop('tags')
@@ -280,7 +279,6 @@ class FollowingUserSerializer(CustomUserSerializer):
     """Сериализатор для подписок с рецептами."""
     recipes = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.SerializerMethodField(read_only=True)
-    recipes_count = serializers.IntegerField(source=('recipes'.count('id')), read_only=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -324,6 +322,6 @@ class FollowSerializer(serializers.ModelSerializer):
                 author=attrs.get('id')
             ).exists()
         return Follow.objects.filter(
-                user=self.context.get('request').user,
-                author=attrs.get('id')
-            ).exists()
+            user=self.context.get('request').user,
+            author=attrs.get('id')
+        ).exists()
