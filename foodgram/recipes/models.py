@@ -8,7 +8,7 @@ from .constants import (
     MAX_LENGTH_COLOR,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_USER_MODEL,
-    MIN_VALUE,
+    MIN_VALUE_FIELD,
     HEX_COLOR_REGEX
 )
 
@@ -83,7 +83,7 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveIntegerField(
         'Время приготовления в минутах',
-        validators=(MinValueValidator(MIN_VALUE),)
+        validators=(MinValueValidator(MIN_VALUE_FIELD),)
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
@@ -124,11 +124,12 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(
         'Ingredient',
         on_delete=models.CASCADE,
-        verbose_name='Ингредиент'
+        verbose_name='Ингредиент',
+        related_name='ingredient'
     )
     amount = models.PositiveIntegerField(
         'Количество',
-        validators=(MinValueValidator(MIN_VALUE),)
+        validators=(MinValueValidator(MIN_VALUE_FIELD),)
     )
     recipe = models.ForeignKey(
         'Recipe',
@@ -236,6 +237,10 @@ class Follow(models.Model):
                 fields=('user', 'author'),
                 name='unique_follow_constraint'
             ),
+            models.CheckConstraint(
+                check = models.Q(user=models.F('author')),
+                name='check_follow_constraint',
+            )
         )
 
     def __str__(self) -> str:
