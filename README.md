@@ -1,5 +1,5 @@
-# Foodgram - веб-сервис, позволяющий людям делиться своими кулинарными рецептами.
-[![Main Foodgram workflow](https://github.com/AlexShemyakin/foodgram-project-react/actions/workflows/main.yml/badge.svg)](https://github.com/AlexShemyakin/foodgram-project-react/actions/workflows/main.yml)
+# [Foodgram](https://gram-foodgram.hopto.org/) - веб-сервис, позволяющий людям делиться своими кулинарными рецептами.
+
 ## Инструменты веб-сервиса позволяют:
 - Публиковать рецепты, их редактировать и удалять;
 - Подписываться на других авторов;
@@ -28,18 +28,29 @@ source venv/bin/activate
 python -m pip install --upgrade pip
 ```
 
+### Записать переменные окружения в .env. Пример приведен в .env_template.
+
 ### Для локального запуска следует запустить docker-compose.yml:
 
 ```
+cd infra
 sudo docker compose -f docker-compose.yml up -d
 ```
 
-### Выполнить миграции и сбор статики:
+### Выполнить миграции и сбор статических файлов:
 
 ```
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
 ```
+
+### Создать суперпользователя для доступа к администрированию сайта:
+
+```
+cd ../foodgram
+python manage.py createsuperuser
+```
+Теперь локальный сервер доступен по адресу http://127.0.0.1/
 
 ### Для запуска проекта на удаленном сервере следует скопировать docker-compose.production.yml и файл с переменным окруженим на сервер:
 
@@ -69,8 +80,15 @@ sudo docker compose -f docker-compose.production.yml exec backend python manage.
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
 ```
 
+### Создать на сервере суперпользователя для доступа к администрированию сайта:
+
+```
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py createsuperuser
+```
+Теперь сервер доступен по адресу https://gram-foodgram.hopto.org
+
 ## Автор проекта
-Шемякин Александр
+[Шемякин Александр](https://github.com/AlexShemyakin)
 
 ## Стек технологий
 Разработка:
