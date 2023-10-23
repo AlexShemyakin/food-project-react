@@ -8,7 +8,7 @@ DEBUG = os.getenv('DEBUG', default='True').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
 
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(' ')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -70,7 +70,7 @@ else:
             'NAME': os.getenv('POSTGRES_DB', 'name'),
             'USER': os.getenv('POSTGRES_USER', 'user'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-            'HOST': os.getenv('PG_HOST', 'db'),
+            'HOST': os.getenv('PG_HOST', '127.0.0.1'),
             'PORT': os.getenv('PG_PORT', '5432'),
         }
     }
@@ -110,13 +110,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 AUTH_USER_MODEL = 'recipes.User'
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
+    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    ],
+    ),
 
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
-    ],
+    ),
 }
 
 DJOSER = {
