@@ -7,6 +7,7 @@ from djoser.serializers import (
 )
 from django.core.files.base import ContentFile
 
+from .utils.utils import check_unique_data
 from recipes.models import (
     Tag,
     Recipe,
@@ -31,9 +32,10 @@ class Base64ImageField(serializers.ImageField):
 
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор создания/удаления модели Favorite."""
+
     class Meta:
         model = Favorite
-        fields = ('id',)
+        fields = ('user', 'recipe')
 
     def validate(self, attrs):
         if self.context.get('request').method == 'POST':
@@ -45,14 +47,19 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
             recipe=attrs.get('id'),
             user=self.context.get('request').user
         ).exists()
+    
+    def to_representation(self, instance):
+        return RecipeShortSerializer(
+            instance,
+            context=self.context
+        ).data
 
 
-class ShoppingCartSerizlizer(serializers.ModelSerializer):
+class ShoppingCartSerizlizer(FavoriteRecipeSerializer):
     """Сериализатор создания/удаления списка покупок."""
 
-    class Meta:
+    class Meta(FavoriteRecipeSerializer.Meta):
         model = ShoppingCart
-        fields = ('id',)
 
     def validate(self, attrs):
         if self.context.get('request').method == 'POST':
@@ -64,6 +71,12 @@ class ShoppingCartSerizlizer(serializers.ModelSerializer):
             recipe=attrs.get('id'),
             user=self.context.get('request').user
         ).exists()
+    
+    def to_representation(self, instance):
+        return RecipeShortSerializer(
+            instance,
+            context=self.context
+        ).data
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -115,16 +128,9 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
-    class Meta:
+    class Meta(UserSerializer.Meta):
         model = User
-        fields = (
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'email',
-            'is_subscribed'
-        )
+        fields = ('is_subscribed',) + UserSerializer.Meta.fields
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
@@ -206,21 +212,30 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
             'ingredients',
             'image'
         )
+    
+    def validate_ingredients(self, data):
+        if not data.get('ingredients'):
+            raise ValidationError({
+                'error': 'Добавьте минимум один ингредиент.'
+             })
+        check_unique_data(data.get('ingredients'))
 
-    def validate(self, attrs):
-        if not attrs.get('tags'):
+    def validate_tags(self, data):
+        if not data.get('tags'):
             raise ValidationError({
-                'error': 'Добавьте тег.'
+                'error': 'Добавьте минимум один тег.'
             })
-        if not attrs.get('ingredients'):
-            raise ValidationError({
-                'error': 'Добавьте ингредиенты.'
-            })
+        check_unique_data(data.get('tags'))
+
+    def validate(self, attrs):        
         if not attrs.get('image'):
             raise ValidationError({
                 'error': 'Добавьте картинку.'
             })
-        return attrs
+        if not attrs.get('cooking_time'):
+            raise ValidationError({
+                'error': 'Укажите время приготовления.'
+            })
 
     def create_update_recipe(self, recipe, ingredients):
         RecipeIngredient.objects.bulk_create(
@@ -279,49 +294,32 @@ class FollowingUserSerializer(CustomUserSerializer):
     """Сериализатор для подписок с рецептами."""
     recipes = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.SerializerMethodField(read_only=True)
-    is_subscribed = serializers.SerializerMethodField(read_only=True)
 
-    class Meta:
+    class Meta(CustomUserSerializer.Meta):
         model = User
-        fields = (
-            'id',
-            'email',
-            'username',
-            'first_name',
-            'last_name',
-            'recipes',
-            'recipes_count',
-            'is_subscribed'
-        )
+        fields = ('recipes', 'recipes_count') + CustomUserSerializer.Meta.fields
         read_only_fields = fields
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
 
-    def get_is_subscribed(self, obj):
-        if self.context.get('request').user.is_authenticated:
-            return (
-                Follow.objects.filter(
-                    user=self.context.get('request').user,
-                    author=obj
-                ).exists()
-            )
-
 
 class FollowSerializer(serializers.ModelSerializer):
-    """Сериализатор создания/удаления модели Follow"""
+    """Сериализатор создания модели Follow"""
 
     class Meta:
         model = Follow
-        fields = ('id',)
+        fields = ('user', 'author')
 
     def validate(self, attrs):
-        if self.context.get('request').method == 'POST':
-            return not Follow.objects.filter(
-                user=self.context.get('request').user,
-                author=attrs.get('id')
-            ).exists()
-        return Follow.objects.filter(
+        if self.context.get('request').user == attrs.get('id'):
+            raise ValidationError({
+                'error': 'Нельзя подписаться на самого себя.'
+            })
+        if Follow.objects.filter(
             user=self.context.get('request').user,
             author=attrs.get('id')
-        ).exists()
+        ).exists():
+            raise ValidationError({
+                'error': 'Вы уже подписаны на данного автора.'
+            })
