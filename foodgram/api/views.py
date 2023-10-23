@@ -12,7 +12,7 @@ from rest_framework.decorators import action
 from .utils.paginators import CustomPaginator
 from .utils.responses import download_csv
 from .filters import RecipeFilter
-from recipes.permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly
 from recipes.models import (
     Tag,
     Recipe,
@@ -38,7 +38,7 @@ from .serializers import (
 class CustomUserViewSet(UserViewSet):
     """
     Представление модели User.
-    CRD(create, read, delete) моделей User, Follow.
+    CRD(create, read, delete) модели Follow.
     """
     pagination_class = CustomPaginator
 
@@ -115,7 +115,7 @@ class RecipeViewSet(ModelViewSet):
     pagination_class = CustomPaginator
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    permission_classes = IsAuthorOrReadOnly
+    permission_classes = (IsAuthorOrReadOnly,)
 
     def get_queryset(self):
         if self.action == 'favorite':
