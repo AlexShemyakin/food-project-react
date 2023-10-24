@@ -7,7 +7,7 @@ def check_unique_data(data):
     for item in data:
         if item in unique_data:
             raise ValidationError({
-                'error': f'Данные должно быть уникальны.'
+                'error': 'Данные должно быть уникальны.'
             })
         unique_data.append(item)
     return data
