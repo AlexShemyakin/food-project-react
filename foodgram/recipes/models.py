@@ -238,7 +238,7 @@ class Follow(models.Model):
                 name='unique_follow_constraint'
             ),
             models.CheckConstraint(
-                check = models.Q(user=models.F('author')),
+                check=models.Q(user=models.F('author')),
                 name='check_follow_constraint',
             )
         )
