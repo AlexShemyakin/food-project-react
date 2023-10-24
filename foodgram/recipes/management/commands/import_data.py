@@ -21,7 +21,7 @@ class Command(BaseCommand):
             rows = csv.DictReader(f, fieldnames=['name', 'measurement_unit'])
             for row in rows:
                 Ingredient.objects.get_or_create(**row)
-        
+
         path_to_file = os.path.join(
             settings.BASE_DIR.parent,
             'data/',
