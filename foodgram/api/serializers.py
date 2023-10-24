@@ -47,7 +47,7 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
             recipe=attrs.get('id'),
             user=self.context.get('request').user
         ).exists()
-    
+
     def to_representation(self, instance):
         return RecipeShortSerializer(
             instance,
@@ -71,7 +71,7 @@ class ShoppingCartSerizlizer(FavoriteRecipeSerializer):
             recipe=attrs.get('id'),
             user=self.context.get('request').user
         ).exists()
-    
+
     def to_representation(self, instance):
         return RecipeShortSerializer(
             instance,
@@ -212,12 +212,12 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
             'ingredients',
             'image'
         )
-    
+
     def validate_ingredients(self, data):
         if not data.get('ingredients'):
             raise ValidationError({
                 'error': 'Добавьте минимум один ингредиент.'
-             })
+            })
         check_unique_data(data.get('ingredients'))
 
     def validate_tags(self, data):
@@ -227,7 +227,7 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
             })
         check_unique_data(data.get('tags'))
 
-    def validate(self, attrs):        
+    def validate(self, attrs):
         if not attrs.get('image'):
             raise ValidationError({
                 'error': 'Добавьте картинку.'
@@ -297,7 +297,10 @@ class FollowingUserSerializer(CustomUserSerializer):
 
     class Meta(CustomUserSerializer.Meta):
         model = User
-        fields = ('recipes', 'recipes_count') + CustomUserSerializer.Meta.fields
+        fields = (
+            'recipes',
+            'recipes_count'
+        ) + CustomUserSerializer.Meta.fields
         read_only_fields = fields
 
     def get_recipes_count(self, obj):
