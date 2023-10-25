@@ -12,7 +12,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         path_to_file = os.path.join(
-            settings.BASE_DIR.parent,
+            settings.BASE_DIR,
             'data/',
             'ingredients.csv'
         )
@@ -23,7 +23,7 @@ class Command(BaseCommand):
                 Ingredient.objects.get_or_create(**row)
 
         path_to_file = os.path.join(
-            settings.BASE_DIR.parent,
+            settings.BASE_DIR,
             'data/',
             'tags.csv'
         )

@@ -3,7 +3,7 @@ MAX_LENGTH_COLOR: int = 7
 MAX_LENGTH_TEXT_FIELD: int = 200
 MAX_LENGTH_EMAIL: int = 254
 MAX_LENGTH_USER_MODEL: int = 150
-MIN_VALUE_FIELD: int = 1
+MIN_VALUE_FIELD_AMOUNT_COOKINGTIME: int = 1
 HEX_COLOR_REGEX: str = r'^#([a-fA-F0-9]{6})$'
 
 # Constants for paginators

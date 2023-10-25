@@ -2,13 +2,12 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import MinValueValidator, RegexValidator
 
-
 from .constants import (
     MAX_LENGTH_TEXT_FIELD,
     MAX_LENGTH_COLOR,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_USER_MODEL,
-    MIN_VALUE_FIELD,
+    MIN_VALUE_FIELD_AMOUNT_COOKINGTIME,
     HEX_COLOR_REGEX
 )
 
@@ -83,7 +82,7 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveIntegerField(
         'Время приготовления в минутах',
-        validators=(MinValueValidator(MIN_VALUE_FIELD),)
+        validators=(MinValueValidator(MIN_VALUE_FIELD_AMOUNT_COOKINGTIME),)
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
@@ -129,7 +128,7 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveIntegerField(
         'Количество',
-        validators=(MinValueValidator(MIN_VALUE_FIELD),)
+        validators=(MinValueValidator(MIN_VALUE_FIELD_AMOUNT_COOKINGTIME),)
     )
     recipe = models.ForeignKey(
         'Recipe',

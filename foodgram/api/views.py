@@ -1,9 +1,9 @@
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
-from djoser.views import UserViewSet
 from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny, SAFE_METHODS
 from rest_framework import status
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
@@ -12,7 +12,6 @@ from rest_framework.decorators import action
 from .utils.paginators import CustomPaginator
 from .utils.responses import download_csv
 from .filters import RecipeFilter
-from .permissions import IsAuthorOrReadOnly
 from recipes.models import (
     Tag,
     Recipe,
@@ -51,7 +50,7 @@ class CustomUserViewSet(UserViewSet):
         author = get_object_or_404(User, id=id)
         if request.method == 'POST':
             follow = FollowSerializer(
-                data={'id': author.id},
+                data={'author': author},
                 context={'request': request}
             )
             follow.is_valid(raise_exception=True)
@@ -91,7 +90,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     """Представление ингридиентов."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (AllowAny,)
     filter_backends = (SearchFilter,)
     search_fields = ('^name',)
 
@@ -100,7 +99,7 @@ class TagViewSet(ReadOnlyModelViewSet):
     """Представление тегов."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (AllowAny,)
     lookup_field = 'slug'
 
 
@@ -115,12 +114,13 @@ class RecipeViewSet(ModelViewSet):
     pagination_class = CustomPaginator
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    permission_classes = (IsAuthorOrReadOnly,)
 
-    def get_queryset(self):
-        if self.action == 'favorite':
-            return self.filter_queryset(self.get_queryset())
-        return super().get_queryset()
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            self.permission_classes = (AllowAny,)
+        else:
+            self.permission_classes = (IsAuthenticated,)
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
