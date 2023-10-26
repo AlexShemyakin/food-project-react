@@ -88,9 +88,9 @@ class ShoppingCartSerizlizer(FavoriteRecipeSerializer):
                 )
         else:
             if not ShoppingCart.objects.filter(
-            recipe=attrs.get('recipe'),
-            user=attrs.get('user')
-        ).exists():
+                recipe=attrs.get('recipe'),
+                user=attrs.get('user')
+            ).exists():
                 raise ValidationError(
                     {'error': 'Рецепт уже отсутствует в списке покупок.'}
                 )
@@ -144,6 +144,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit'
     )
+
     class Meta:
         model = RecipeIngredient
         fields = ('amount', 'id', 'name', 'measurement_unit',)
@@ -166,10 +167,10 @@ class CustomUserSerializer(UserSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    """Серил. для чтения рецептов."""
+    """Сериализатор для чтения рецептов."""
     tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientSerializer(
-        source = 'recipe_ingredients',
+        source='recipe_ingredients',
         many=True,
         read_only=True
     )
@@ -209,7 +210,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeIndregientCreateSerializer(serializers.ModelSerializer):
-    """Серил. для создания ингридиентов для серил. создания рецептов."""
+    """Сериализатор ингридиентов для создания рецептов."""
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all()
     )
@@ -348,10 +349,10 @@ class FollowingUserSerializer(CustomUserSerializer):
                 context=self.context
             ).data
         return RecipeShortSerializer(
-                obj.recipes,
-                many=True,
-                context=self.context
-            ).data[:int(limit)]
+            obj.recipes,
+            many=True,
+            context=self.context
+        ).data[:int(limit)]
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()

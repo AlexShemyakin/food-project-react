@@ -156,7 +156,7 @@ class RecipeViewSet(ModelViewSet):
             context={'request': request}
         )
         obj.is_valid(raise_exception=True)
-        obj.save() 
+        obj.save()
         return Response(
             obj.data,
             status=status.HTTP_201_CREATED
