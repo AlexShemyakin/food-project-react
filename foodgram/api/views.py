@@ -50,7 +50,10 @@ class CustomUserViewSet(UserViewSet):
         author = get_object_or_404(User, id=id)
         if request.method == 'POST':
             follow = FollowSerializer(
-                data={'author': author},
+                data={
+                    'author': author,
+                    'user': request.user
+                },
                 context={'request': request}
             )
             follow.is_valid(raise_exception=True)
@@ -130,7 +133,10 @@ class RecipeViewSet(ModelViewSet):
     def delete_action(self, request, pk, serializer, model):
         """Удаление объекта модели favorite/shopping_cart."""
         obj = serializer(
-            data={'id': pk},
+            data={
+                'id': pk,
+                'user': request.user
+            },
             context={'request': request}
         )
         obj.is_valid(raise_exception=True)
@@ -143,7 +149,10 @@ class RecipeViewSet(ModelViewSet):
     def create_action(self, request, pk, serializer):
         """Создание объекта модели favorite/shopping_cart."""
         obj = serializer(
-            data={'id': pk},
+            data={
+                'id': pk,
+                'user': request.user
+            },
             context={'request': request}
         )
         obj.is_valid(raise_exception=True)

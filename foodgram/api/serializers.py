@@ -42,11 +42,11 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
         if self.context.get('request').method == 'POST':
             return not Favorite.objects.filter(
                 recipe=attrs.get('id'),
-                user=self.context.get('request').user
+                user=attrs.get('user')
             ).exists()
         return Favorite.objects.filter(
             recipe=attrs.get('id'),
-            user=attrs.get('request').user
+            user=attrs.get('user')
         ).exists()
 
     def create(self, validated_data):
@@ -73,11 +73,11 @@ class ShoppingCartSerizlizer(FavoriteRecipeSerializer):
         if self.context.get('request').method == 'POST':
             return not ShoppingCart.objects.filter(
                 recipe=attrs.get('id'),
-                user=self.context.get('request').user
+                user=attrs.get('user')
             ).exists()
         return ShoppingCart.objects.filter(
             recipe=attrs.get('id'),
-            user=attrs.get('request').user
+            user=attrs.get('user')
         ).exists()
 
     def create(self, validated_data):
@@ -346,12 +346,12 @@ class FollowSerializer(serializers.ModelSerializer):
         fields = ('user', 'author')
 
     def validate(self, attrs):
-        if attrs.get('request').user == attrs.get('author').user:
+        if attrs.get('user') == attrs.get('author'):
             raise ValidationError({
                 'error': 'Нельзя подписаться на самого себя.'
             })
         if Follow.objects.filter(
-            user=attrs.get('request').user,
+            user=attrs.get('user'),
             author=attrs.get('author')
         ).exists():
             raise ValidationError({
