@@ -51,8 +51,8 @@ class CustomUserViewSet(UserViewSet):
         if request.method == 'POST':
             follow = FollowSerializer(
                 data={
-                    'author': author,
-                    'user': request.user
+                    'author': author.id,
+                    'user': request.user.id
                 },
                 context={'request': request}
             )
@@ -134,14 +134,14 @@ class RecipeViewSet(ModelViewSet):
         """Удаление объекта модели favorite/shopping_cart."""
         obj = serializer(
             data={
-                'id': pk,
-                'user': request.user
+                'recipe': pk,
+                'user': request.user.id
             },
             context={'request': request}
         )
         obj.is_valid(raise_exception=True)
         self.perform_destroy(
-            model.objects.filter(recipe=pk, user=request.user)
+            model.objects.filter(recipe=pk, user=request.user.id)
         )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -150,15 +150,15 @@ class RecipeViewSet(ModelViewSet):
         """Создание объекта модели favorite/shopping_cart."""
         obj = serializer(
             data={
-                'id': pk,
-                'user': request.user
+                'recipe': pk,
+                'user': request.user.id
             },
             context={'request': request}
         )
         obj.is_valid(raise_exception=True)
-        obj.save()
+        obj.save() 
         return Response(
-            serializer,
+            obj.data,
             status=status.HTTP_201_CREATED
         )
 

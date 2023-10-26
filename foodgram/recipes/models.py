@@ -68,8 +68,7 @@ class Ingredient(models.Model):
         )
 
     def __str__(self) -> str:
-        return self.name
-
+        return f'{self.name} - {self.measurement_unit}'
 
 class Recipe(models.Model):
     """Recipe."""
@@ -124,7 +123,7 @@ class RecipeIngredient(models.Model):
         'Ingredient',
         on_delete=models.CASCADE,
         verbose_name='Ингредиент',
-        related_name='ingredient'
+        # related_name='ingredient'
     )
     amount = models.PositiveIntegerField(
         'Количество',
@@ -237,7 +236,7 @@ class Follow(models.Model):
                 name='unique_follow_constraint'
             ),
             models.CheckConstraint(
-                check=models.Q(user=models.F('author')),
+                check=~models.Q(user=models.F('author')),
                 name='check_follow_constraint',
             )
         )

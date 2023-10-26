@@ -40,18 +40,26 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if self.context.get('request').method == 'POST':
-            return not Favorite.objects.filter(
-                recipe=attrs.get('id'),
+            if Favorite.objects.filter(
+                recipe=attrs.get('recipe'),
                 user=attrs.get('user')
-            ).exists()
-        return Favorite.objects.filter(
-            recipe=attrs.get('id'),
-            user=attrs.get('user')
-        ).exists()
+            ).exists():
+                raise ValidationError(
+                    {'error': 'Рецепт уже в избранном.'}
+                )
+        else:
+            if not Favorite.objects.filter(
+                recipe=attrs.get('recipe'),
+                user=attrs.get('user')
+            ).exists():
+                raise ValidationError(
+                    {'error': 'Рецепта нет в избранном.'}
+                )
+        return attrs
 
     def create(self, validated_data):
         obj = Favorite.objects.create(
-            recipe=validated_data.get('id'),
+            recipe=validated_data.get('recipe'),
             user=self.context.get('request').user
         )
         return obj
@@ -71,27 +79,29 @@ class ShoppingCartSerizlizer(FavoriteRecipeSerializer):
 
     def validate(self, attrs):
         if self.context.get('request').method == 'POST':
-            return not ShoppingCart.objects.filter(
-                recipe=attrs.get('id'),
+            if ShoppingCart.objects.filter(
+                recipe=attrs.get('recipe'),
                 user=attrs.get('user')
-            ).exists()
-        return ShoppingCart.objects.filter(
-            recipe=attrs.get('id'),
+            ).exists():
+                raise ValidationError(
+                    {'error': 'Рецепт уже в списке покупок.'}
+                )
+        else:
+            if not ShoppingCart.objects.filter(
+            recipe=attrs.get('recipe'),
             user=attrs.get('user')
-        ).exists()
+        ).exists():
+                raise ValidationError(
+                    {'error': 'Рецепт уже отсутствует в списке покупок.'}
+                )
+        return attrs
 
     def create(self, validated_data):
         obj = ShoppingCart.objects.create(
-            recipe=validated_data.get('id'),
+            recipe=validated_data.get('recipe'),
             user=self.context.get('request').user
         )
         return obj
-
-    def to_representation(self, instance):
-        return RecipeSerializer(
-            instance,
-            context=self.context
-        ).data
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -134,10 +144,9 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit'
     )
-
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'measurement_unit',)
+        fields = ('amount', 'id', 'name', 'measurement_unit',)
 
 
 class CustomUserSerializer(UserSerializer):
@@ -159,7 +168,11 @@ class CustomUserSerializer(UserSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     """Серил. для чтения рецептов."""
     tags = TagSerializer(many=True, read_only=True)
-    ingredients = RecipeIngredientSerializer(many=True, read_only=True)
+    ingredients = RecipeIngredientSerializer(
+        source = 'recipe_ingredients',
+        many=True,
+        read_only=True
+    )
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     image = Base64ImageField()
@@ -328,11 +341,17 @@ class FollowingUserSerializer(CustomUserSerializer):
 
     def get_recipes(self, obj):
         limit = self.context.get('request').query_params.get('limit')
+        if not limit:
+            return RecipeShortSerializer(
+                obj.recipes,
+                many=True,
+                context=self.context
+            ).data
         return RecipeShortSerializer(
-            obj.recipes,
-            many=True,
-            context=self.context
-        ).data[:int(limit)]
+                obj.recipes,
+                many=True,
+                context=self.context
+            ).data[:int(limit)]
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
