@@ -19,6 +19,7 @@ from recipes.models import (
     Favorite,
     Follow
 )
+from recipes.constants import MIN_VALUE_FIELD_AMOUNT_COOKINGTIME
 
 
 class Base64ImageField(serializers.ImageField):
@@ -57,15 +58,9 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
                 )
         return attrs
 
-    def create(self, validated_data):
-        obj = Favorite.objects.create(
-            recipe=validated_data.get('recipe'),
-            user=self.context.get('request').user
-        )
-        return obj
 
     def to_representation(self, instance):
-        return RecipeSerializer(
+        return FavoriteShoppingSerializer(
             instance,
             context=self.context
         ).data
@@ -95,13 +90,6 @@ class ShoppingCartSerizlizer(FavoriteRecipeSerializer):
                     {'error': 'Рецепт уже отсутствует в списке покупок.'}
                 )
         return attrs
-
-    def create(self, validated_data):
-        obj = ShoppingCart.objects.create(
-            recipe=validated_data.get('recipe'),
-            user=self.context.get('request').user
-        )
-        return obj
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -228,7 +216,7 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
         many=True,
         required=True
     )
-    image = Base64ImageField()
+    image = Base64ImageField(required=True)
 
     class Meta:
         model = Recipe
@@ -259,16 +247,11 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
         return data
 
     def validate(self, attrs):
-        assert(attrs)
-        if not attrs.get('image'):
-            raise ValidationError({
-                'error': 'Добавьте картинку.'
-            })
         if not attrs.get('cooking_time'):
             raise ValidationError({
                 'error': 'Укажите время приготовления.'
             })
-        if attrs.get('cooking_time') < 1:
+        if attrs.get('cooking_time') < MIN_VALUE_FIELD_AMOUNT_COOKINGTIME:
             raise ValidationError({
                 'error': 'Введите значение больше 1.'
             })
@@ -313,6 +296,39 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
         ).data
 
 
+class FavoriteShoppingSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор полей статуса избранного и списка покупок
+    после создания объектов их моделей.
+    """
+    is_favorited = serializers.SerializerMethodField(read_only=True)
+    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = (Favorite or ShoppingCart)
+        fields = ['is_favorited', 'is_in_shopping_cart']
+
+    def get_is_favorited(self, obj):
+        user = self.context.get('request').user
+        return (
+            user.is_authenticated
+            and Favorite.objects.filter(
+                user=obj.user,
+                recipe=obj.recipe
+            ).exists()
+        )
+
+    def get_is_in_shopping_cart(self, obj):
+        user = self.context.get('request').user
+        return (
+            user.is_authenticated
+            and ShoppingCart.objects.filter(
+                user=obj.user,
+                recipe=obj.recipe
+            ).exists()
+        )
+
+
 class CustomUserCreateSerializer(UserCreateSerializer):
 
     class Meta:
@@ -341,25 +357,37 @@ class FollowingUserSerializer(CustomUserSerializer):
         read_only_fields = fields
 
     def get_recipes(self, obj):
-        limit = self.context.get('request').query_params.get('limit')
-        if not limit:
-            return RecipeShortSerializer(
-                obj.recipes,
-                many=True,
-                context=self.context
-            ).data
         return RecipeShortSerializer(
             obj.recipes,
             many=True,
             context=self.context
-        ).data[:int(limit)]
+        ).data
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
 
 
+class FollowPresentationsSerializer(serializers.ModelSerializer):
+    """Сериализатор поля статуса после создания объекта модели Follow."""
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Follow
+        fields = ('is_subscribed',)
+
+    def get_is_subscribed(self, obj):
+        user = self.context.get('request').user
+        return (
+            user.is_authenticated
+            and Follow.objects.filter(
+                user=obj.user,
+                author=obj.author
+            ).exists()
+        )
+
+
 class FollowSerializer(serializers.ModelSerializer):
-    """Сериализатор создания модели Follow"""
+    """Сериализатор создания модели Follow."""
 
     class Meta:
         model = Follow
@@ -379,9 +407,8 @@ class FollowSerializer(serializers.ModelSerializer):
             })
         return attrs
 
-    def create(self, validated_data):
-        obj = Follow.objects.create(
-            user=self.context.get('request').user,
-            author=validated_data.get('author')
-        )
-        return obj
+    def to_representation(self, instance):
+        return FollowPresentationsSerializer(
+            instance,
+            context=self.context
+        ).data

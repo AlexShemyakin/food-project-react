@@ -5,13 +5,12 @@ from djoser.views import UserViewSet
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny, SAFE_METHODS
 from rest_framework import status
-from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from .utils.paginators import CustomPaginator
 from .utils.responses import download_csv
-from .filters import RecipeFilter
+from .filters import RecipeFilter, IngredientSearchFilter
 from recipes.models import (
     Tag,
     Recipe,
@@ -59,12 +58,10 @@ class CustomUserViewSet(UserViewSet):
             follow.is_valid(raise_exception=True)
             follow.save()
             return Response(
-                FollowingUserSerializer(
-                    author,
-                    context={'request': request}
-                ).data,
+                follow.data,
                 status=status.HTTP_201_CREATED
             )
+
         get_object_or_404(
             Follow,
             user=request.user,
@@ -94,7 +91,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
-    filter_backends = (SearchFilter,)
+    filter_backends = (IngredientSearchFilter,)
     search_fields = ('^name',)
 
 

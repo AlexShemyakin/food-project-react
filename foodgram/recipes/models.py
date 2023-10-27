@@ -49,7 +49,6 @@ class Ingredient(models.Model):
     name = models.CharField(
         max_length=MAX_LENGTH_TEXT_FIELD,
         verbose_name='Название ингредиента',
-        unique=True
     )
     measurement_unit = models.CharField(
         max_length=MAX_LENGTH_TEXT_FIELD,
@@ -60,7 +59,12 @@ class Ingredient(models.Model):
         ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        unique_together = ('name', 'measurement_unit',)
+        constraints = (
+            models.UniqueConstraint(
+                fields=('name',),
+                name='ingredien_unique_constraint',
+            ),
+        )
 
     def __str__(self) -> str:
         return f'{self.name} - {self.measurement_unit}'
@@ -119,7 +123,6 @@ class RecipeIngredient(models.Model):
         'Ingredient',
         on_delete=models.CASCADE,
         verbose_name='Ингредиент',
-        # related_name='ingredient'
     )
     amount = models.PositiveIntegerField(
         'Количество',
@@ -263,7 +266,8 @@ class User(AbstractUser):
     )
     password = models.CharField(
         max_length=MAX_LENGTH_USER_MODEL,
-        verbose_name='password'
+        verbose_name='password',
+        blank=False
     )
 
     USERNAME_FIELD = 'email'

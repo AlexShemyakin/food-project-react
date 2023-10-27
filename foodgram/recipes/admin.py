@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django import forms
+from rest_framework.validators import ValidationError
 
 from .models import (
     Tag,
@@ -13,9 +14,20 @@ from .models import (
 )
 
 
+class CustomBaseInlineFormSet(forms.BaseInlineFormSet):
+    def clean(self):
+        all_forms_deleted = all(
+            form.cleaned_data.get('DELETE') for form in self.forms
+        )
+        if all_forms_deleted:
+            raise ValidationError('Необходимо добавить ингридиенты.')
+
+
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
-    extra = 1
+    extra = 0
+    min_num = 1
+    formset = CustomBaseInlineFormSet
 
 
 @admin.register(Ingredient)
@@ -28,6 +40,7 @@ class IngredientAdmin(admin.ModelAdmin):
     list_filter = (
         'name',
     )
+    search_fields = ('name',)
 
 
 @admin.register(Recipe)
