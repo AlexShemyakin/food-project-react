@@ -58,7 +58,6 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
                 )
         return attrs
 
-
     def to_representation(self, instance):
         return FavoriteShoppingSerializer(
             instance,
