@@ -61,7 +61,6 @@ class CustomUserViewSet(UserViewSet):
                 follow.data,
                 status=status.HTTP_201_CREATED
             )
-
         get_object_or_404(
             Follow,
             user=request.user,

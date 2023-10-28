@@ -59,8 +59,8 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
         return attrs
 
     def to_representation(self, instance):
-        return FavoriteShoppingSerializer(
-            instance,
+        return RecipeShortSerializer(
+            instance.recipe,
             context=self.context
         ).data
 
@@ -146,10 +146,15 @@ class CustomUserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
+        if obj.__class__ == User:
+            return (
+                user.is_authenticated
+                and user != obj
+                and obj.following.filter(user=user).exists()
+            )
         return (
             user.is_authenticated
-            and user != obj
-            and obj.following.filter(user=user).exists()
+            and obj.user == user
         )
 
 
@@ -295,39 +300,6 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
         ).data
 
 
-class FavoriteShoppingSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор полей статуса избранного и списка покупок
-    после создания объектов их моделей.
-    """
-    is_favorited = serializers.SerializerMethodField(read_only=True)
-    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = (Favorite or ShoppingCart)
-        fields = ['is_favorited', 'is_in_shopping_cart']
-
-    def get_is_favorited(self, obj):
-        user = self.context.get('request').user
-        return (
-            user.is_authenticated
-            and Favorite.objects.filter(
-                user=obj.user,
-                recipe=obj.recipe
-            ).exists()
-        )
-
-    def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
-        return (
-            user.is_authenticated
-            and ShoppingCart.objects.filter(
-                user=obj.user,
-                recipe=obj.recipe
-            ).exists()
-        )
-
-
 class CustomUserCreateSerializer(UserCreateSerializer):
 
     class Meta:
@@ -355,34 +327,23 @@ class FollowingUserSerializer(CustomUserSerializer):
         ) + CustomUserSerializer.Meta.fields
         read_only_fields = fields
 
+    def get_recipes_limit(self):
+        limit = self.context.get('request').query_params.get('recipes_limit')
+        if limit:
+            return int(limit)
+        else:
+            None
+
     def get_recipes(self, obj):
+        limit = self.get_recipes_limit()
         return RecipeShortSerializer(
             obj.recipes,
             many=True,
             context=self.context
-        ).data
+        ).data[:limit]
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
-
-
-class FollowPresentationsSerializer(serializers.ModelSerializer):
-    """Сериализатор поля статуса после создания объекта модели Follow."""
-    is_subscribed = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = Follow
-        fields = ('is_subscribed',)
-
-    def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
-        return (
-            user.is_authenticated
-            and Follow.objects.filter(
-                user=obj.user,
-                author=obj.author
-            ).exists()
-        )
 
 
 class FollowSerializer(serializers.ModelSerializer):
@@ -390,7 +351,7 @@ class FollowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Follow
-        fields = ('user', 'author')
+        fields = ('user', 'author',)
 
     def validate(self, attrs):
         if attrs.get('user') == attrs.get('author'):
@@ -407,7 +368,7 @@ class FollowSerializer(serializers.ModelSerializer):
         return attrs
 
     def to_representation(self, instance):
-        return FollowPresentationsSerializer(
-            instance,
+        return FollowingUserSerializer(
+            instance.author,
             context=self.context
         ).data

@@ -59,12 +59,7 @@ class Ingredient(models.Model):
         ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        constraints = (
-            models.UniqueConstraint(
-                fields=('name',),
-                name='ingredien_unique_constraint',
-            ),
-        )
+        unique_together = ('name', 'measurement_unit',)
 
     def __str__(self) -> str:
         return f'{self.name} - {self.measurement_unit}'
@@ -263,11 +258,6 @@ class User(AbstractUser):
         'Электронная почта',
         max_length=MAX_LENGTH_EMAIL,
         unique=True
-    )
-    password = models.CharField(
-        max_length=MAX_LENGTH_USER_MODEL,
-        verbose_name='password',
-        blank=False
     )
 
     USERNAME_FIELD = 'email'
