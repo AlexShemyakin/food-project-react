@@ -89,6 +89,7 @@ class UserAdmin(admin.ModelAdmin):
         'email',
         'username'
     )
+    exclude = ('password',)
 
     def recipes_count(self, obj):
         return obj.recipes.all().count()
