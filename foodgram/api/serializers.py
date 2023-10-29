@@ -146,15 +146,10 @@ class CustomUserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
-        if obj.__class__ == User:
-            return (
-                user.is_authenticated
-                and user != obj
-                and obj.following.filter(user=user).exists()
-            )
         return (
             user.is_authenticated
-            and obj.user == user
+            and user != obj
+            and obj.following.filter(user=user).exists()
         )
 
 
@@ -330,9 +325,12 @@ class FollowingUserSerializer(CustomUserSerializer):
     def get_recipes_limit(self):
         limit = self.context.get('request').query_params.get('recipes_limit')
         if limit:
-            return int(limit)
-        else:
-            None
+            try:
+                return int(limit)
+            except ValueError:
+                raise ValueError(
+                    {'error': 'Параметр recipes_limit должен содержать число.'}
+                )
 
     def get_recipes(self, obj):
         limit = self.get_recipes_limit()
