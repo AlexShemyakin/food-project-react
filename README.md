@@ -1,4 +1,4 @@
-# [Foodgram](https://gram-foodgram.hopto.org/) - веб-сервис, позволяющий людям делиться своими кулинарными рецептами.
+# Веб-сервис, позволяющий людям делиться своими кулинарными рецептами.
 [![Main Foodgram workflow](https://github.com/AlexShemyakin/foodgram-project-react/actions/workflows/main.yml/badge.svg)](https://github.com/AlexShemyakin/foodgram-project-react/actions/workflows/main.yml)
 ## Инструменты веб-сервиса позволяют:
 - Публиковать рецепты, их редактировать и удалять;
